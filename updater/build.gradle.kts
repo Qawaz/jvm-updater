@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.qawaz.jvm"
-version = "1.0.1"
+version = property("version") as String
 
 repositories {
     mavenCentral()

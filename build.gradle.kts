@@ -7,17 +7,14 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-group = "me.wakaztahir"
-version = "2.0.3"
-
 repositories {
     google()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
 
-group="com.qawaz"
-version="1.0.0"
+group="com.qawaz.jvm"
+version = property("version") as String
 
 dependencies {
     implementation(compose.desktop.currentOs)
