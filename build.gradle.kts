@@ -34,7 +34,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "AppUpdater"
-            packageVersion = "2.0.4"
+            packageVersion = "1.0.0"
             modules("java.base", "java.instrument", "java.sql", "jdk.unsupported")
         }
     }

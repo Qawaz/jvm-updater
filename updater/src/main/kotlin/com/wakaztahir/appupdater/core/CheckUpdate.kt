@@ -5,12 +5,15 @@ import com.wakaztahir.appupdater.model.GithubResponse
 import com.wakaztahir.appupdater.model.UpdateMetadata
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.awt.Desktop
 import java.io.File
 import java.util.*
@@ -44,12 +47,21 @@ suspend fun getUpdateMetadata(owner: String, repo: String, currentVersion: Strin
     )
 }
 
-suspend inline fun UpdateMetadata.downloadAndLaunchUpdate(launchInExplorerAsWell: Boolean = false) {
-    this.response.downloadAndLaunchUpdate(launchInExplorerAsWell = launchInExplorerAsWell)
+suspend inline fun UpdateMetadata.downloadAndLaunchUpdate(
+    launchInExplorerAsWell: Boolean = false,
+    noinline onProgress: (bytesSentTotal: Long, contentLength: Long) -> Unit
+) {
+    this.response.downloadAndLaunchUpdate(
+        launchInExplorerAsWell = launchInExplorerAsWell,
+        onProgress = onProgress
+    )
 }
 
-suspend inline fun GithubResponse.downloadAndLaunchUpdate(launchInExplorerAsWell: Boolean = false) {
-    val updatedFile = this.downloadUpdate() ?: throw IllegalStateException("couldn't download file")
+suspend fun GithubResponse.downloadAndLaunchUpdate(
+    launchInExplorerAsWell: Boolean = false,
+    onProgress: suspend (bytesSentTotal: Long, contentLength: Long) -> Unit
+) {
+    val updatedFile = this.downloadUpdate(onProgress) ?: throw IllegalStateException("couldn't download file")
     if (launchInExplorerAsWell) {
         try {
             val desktop = Desktop.getDesktop()
@@ -78,7 +90,7 @@ private fun String.getExtension(): String {
     return if (dotInd <= sepInd) "" else substring(dotInd + 1).lowercase(Locale.getDefault())
 }
 
-suspend fun GithubResponse.downloadUpdate(): File? {
+suspend fun GithubResponse.downloadUpdate(onProgress: suspend (bytesSentTotal: Long, contentLength: Long) -> Unit): File? {
     val currentOs = getOS() ?: throw IllegalStateException("couldn't get os")
     var assetWithExtension: Pair<GithubAsset, String>? = null
 
@@ -103,19 +115,33 @@ suspend fun GithubResponse.downloadUpdate(): File? {
     }
 
     return if (assetWithExtension != null) {
-        downloadFile(assetWithExtension.first.browserDownloadUrl, extension = assetWithExtension.second)
+        downloadFile(
+            url = assetWithExtension.first.browserDownloadUrl,
+            extension = assetWithExtension.second,
+            onProgress = onProgress
+        )
     } else {
         null
     }
 }
 
-private suspend fun downloadFile(url: String, extension: String): File {
+private suspend fun downloadFile(
+    url: String,
+    extension: String,
+    onProgress: suspend (bytesSentTotal: Long, contentLength: Long) -> Unit
+): File {
     return withContext(Dispatchers.IO) {
         val client = HttpClient {
             expectSuccess = false
+            install(HttpTimeout)
         }
-        val response = client.get(url)
-        val tempFile = File.createTempFile("update", extension)
+        val response = client.get(url) {
+            timeout {
+                this.requestTimeoutMillis = Long.MAX_VALUE
+            }
+            onDownload(onProgress)
+        }
+        val tempFile = File.createTempFile("update", ".$extension")
         val output = tempFile.outputStream()
         response.bodyAsChannel().copyTo(output)
         output.close()
@@ -127,7 +153,11 @@ suspend fun getGithubResponseFor(owner: String, repo: String, release: String = 
     val repoUrl = "https://api.github.com/repos/$owner/$repo/releases/$release"
     val client = HttpClient {
         expectSuccess = false
-        install(ContentNegotiation)
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+            })
+        }
     }
     val response = client.get(repoUrl) {
 

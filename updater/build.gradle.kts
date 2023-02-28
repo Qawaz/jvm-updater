@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.qawaz.jvm"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -24,6 +24,7 @@ dependencies {
     val ktorVersion = "2.2.3"
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
 
     // Serialization
