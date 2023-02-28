@@ -16,6 +16,9 @@ repositories {
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
 
+group="com.qawaz"
+version="1.0.0"
+
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation(project(":updater"))
