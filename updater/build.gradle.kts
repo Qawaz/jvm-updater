@@ -7,7 +7,7 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-group = "com.wakaztahir.appupdate"
+group = "com.qawaz.jvm"
 version = "1.0.0"
 
 repositories {

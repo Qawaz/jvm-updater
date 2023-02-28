@@ -33,7 +33,7 @@ compose.desktop {
         mainClass = "MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "StringsTranslator"
+            packageName = "AppUpdater"
             packageVersion = "2.0.4"
             modules("java.base", "java.instrument", "java.sql", "jdk.unsupported")
         }
