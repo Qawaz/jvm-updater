@@ -18,31 +18,11 @@ import java.awt.Desktop
 import java.io.File
 import java.util.*
 
-private fun String.parseAsVersion(): UpdateMetadata.Version {
-    return if (contains('.')) {
-        val arr = split('.')
-        UpdateMetadata.Version(
-            major = arr[0].toInt(),
-            minor = arr[1].toIntOrNull() ?: 0,
-            patch = arr[2].toIntOrNull() ?: 0
-        )
-    } else {
-        UpdateMetadata.Version(
-            major = this.toInt(),
-            minor = 0,
-            patch = 0
-        )
-    }
-}
-
 suspend fun getUpdateMetadata(owner: String, repo: String, currentVersion: String): UpdateMetadata {
-    val version = currentVersion.parseAsVersion()
     val response = getGithubResponseFor(owner, repo)
-    val releaseVersion = response.tagName.parseAsVersion()
     return UpdateMetadata(
-        hasUpdate = releaseVersion > version,
-        clientVersion = version,
-        hostVersion = releaseVersion,
+        clientVersionStr = currentVersion,
+        hostVersionStr = response.tagName,
         response = response
     )
 }
